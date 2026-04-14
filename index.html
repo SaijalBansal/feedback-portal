@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feedback Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 620px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        input, button { margin: 6px 0; padding: 10px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #0078d4; color: white; border: none; cursor: pointer; font-size: 15px; }
+        button:hover { background: #005fa3; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; list-style: none; }
+        h2 { color: #0078d4; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>📝 Submit Feedback</h2>
+        <input id="name" placeholder="Your Name" />
+        <input id="feedback" placeholder="Your Feedback" />
+        <button onclick="submitFeedback()">Submit</button>
+    </div>
+    <div class="card">
+        <h2>📄 Upload Feedback Document (.txt)</h2>
+        <input type="file" id="fileInput" accept=".txt" />
+        <button onclick="uploadFile()">Upload Document</button>
+    </div>
+    <div class="card">
+        <h2>📋 Feedback List</h2>
+        <ul id="list"><li>Loading...</li></ul>
+    </div>
+<script>
+const API_BASE = "/api/feedback";
+
+async function submitFeedback() {
+    const name = document.getElementById("name").value.trim();
+    const feedback = document.getElementById("feedback").value.trim();
+    if (!name || !feedback) return alert("Please fill in both fields.");
+    await fetch(API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, feedback })
+    });
+    loadFeedback();
+}
+
+async function uploadFile() {
+    const file = document.getElementById("fileInput").files[0];
+    if (!file) return alert("Please select a .txt file first.");
+    const text = await file.text();
+    await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: text
+    });
+    loadFeedback();
+}
+
+async function loadFeedback() {
+    const res = await fetch(API_BASE);
+    const data = await res.json();
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    if (data.length === 0) { list.innerHTML = "<li>No feedback yet.</li>"; return; }
+    data.forEach(item => {
+        const li = document.createElement("li");
+        li.innerText = `👤 ${item.name}: ${item.feedback}` + (item.rating ? `  ⭐ ${item.rating}` : "");
+        list.appendChild(li);
+    });
+}
+loadFeedback();
+</script>
+</body>
+</html>
